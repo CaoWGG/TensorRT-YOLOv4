@@ -6,10 +6,10 @@
 ### Performance
 | model       | input_size | GPU      | mode   | inference Time |
 |----------------|------------|----------|--------|---------------|
-| [yolov4](https://github.com/AlexeyAB/darknet/blob/master/cfg/yolov4.cfg)   | 608x608    | gtx 1080Ti |float32 |    -    |
-| [yolov4](https://github.com/AlexeyAB/darknet/blob/master/cfg/yolov4.cfg)   | 416x416    | gtx 1080Ti |float32 |    -    |
-| [yolov3](https://github.com/AlexeyAB/darknet/blob/master/cfg/yolov3.cfg)   | 608x608   | gtx 1080Ti |float32 |    -    |
-| [yolov3](https://github.com/AlexeyAB/darknet/blob/master/cfg/yolov3.cfg)   | 416x416   | gtx 1080Ti |float32 |    -    |
+| [yolov4](https://github.com/AlexeyAB/darknet/blob/master/cfg/yolov4.cfg)   | 608x608    | gtx 1080Ti |float32 |    23.3 ms    |
+| [yolov4](https://github.com/AlexeyAB/darknet/blob/master/cfg/yolov4.cfg)   | 416x416    | gtx 1080Ti |float32 |    13.0 ms    |
+| [yolov3](https://github.com/AlexeyAB/darknet/blob/master/cfg/yolov3.cfg)   | 608x608   | gtx 1080Ti |float32 |    18.2 ms    |
+| [yolov3](https://github.com/AlexeyAB/darknet/blob/master/cfg/yolov3.cfg)   | 416x416   | gtx 1080Ti |float32 |    10.0ms    |
 1. Including pre-processing and post-processing time.
 
 ### Enviroments
