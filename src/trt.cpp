@@ -67,7 +67,6 @@ namespace yolodet{
         return deviceMem;
     }
     yoloNet::yoloNet(const std::string &onnxFile, const std::string &calibFile, int maxBatchSzie,yolodet::RUN_MODE mode) {
-        cudaSetDevice(0);
         auto builder = nvUniquePtr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(gLogger));
         assert(builder!= nullptr);
 
@@ -126,7 +125,6 @@ namespace yolodet{
     }
     yoloNet::yoloNet(const std::string &engineFile)
     {
-        cudaSetDevice(0);
         using namespace std;
         fstream file;
 
