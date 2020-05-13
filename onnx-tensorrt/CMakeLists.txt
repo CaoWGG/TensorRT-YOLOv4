@@ -76,6 +76,7 @@ set(PLUGIN_SOURCES
         plugin.cpp
         mish.cu
         yolo.cu
+        darknetadd.cu
   )
 
 set(IMPORTER_SOURCES

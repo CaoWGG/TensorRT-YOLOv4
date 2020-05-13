@@ -16,8 +16,8 @@ __global__ void yoloKernel(const int n,const float * input, float* output, const
     const int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx >= n) return;
     extern __shared__ int shared_anchors[];
-    if(threadIdx.x == 0){
-        for(int i=0; i< anchor_num*2; ++i)shared_anchors[i] = anchors[i];
+    if(threadIdx.x < anchor_num*2){
+        shared_anchors[threadIdx.x] = anchors[threadIdx.x];
     }
     __syncthreads();
     int row = idx % width;
@@ -44,7 +44,7 @@ __global__ void yoloKernel(const int n,const float * input, float* output, const
             float * data = output + 1 + resCount*7;
             // x1,y1,x2,y2,cls,conf,batch_id
             data[0] = (row + sigmoid(input[begin_id]))*down_stride;
-            data[1] = (col + sigmoid(input[begin_id+stride]))*down_stride;
+            data[1] = (col  + sigmoid(input[begin_id+stride]))*down_stride;
             data[2] = expf(input[begin_id+2*stride]) * (float)shared_anchors[2*anchor_id];
             data[3] = expf(input[begin_id+3*stride]) * (float)shared_anchors[2*anchor_id + 1];
             data[4] = class_id;

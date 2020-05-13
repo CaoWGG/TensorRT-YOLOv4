@@ -30,6 +30,7 @@
 #include "DCNv2.hpp"
 #include "mish.h"
 #include "yolo.h"
+#include "darknetadd.h"
 #include <numeric> // For std::iota
 
 namespace onnx2trt {
@@ -979,6 +980,7 @@ DEFINE_BUILTIN_OP_IMPORTER(Gather) {
     int axis = attrs.get<int>("axis", 0);
     int nbDims = inputs.at(0).shape().nbDims;
     TRT_CHECK(convert_axis(axis, nbDims));
+
     RETURN_FIRST_OUTPUT(ctx->network()->addGather(data, indices, axis));
 }
 #endif // NV_TENSORRT_MAJOR >= 4
@@ -2188,7 +2190,15 @@ DEFINE_BUILTIN_OP_IMPORTER(YOLO) {
             ctx->addPlugin(
                     new YOLOPlugin(anchors,anchor_num,classes,down_stride,infer_thresh),
                     {&inputs.at(0).tensor()}));
-    return inputs;
+}
+DEFINE_BUILTIN_OP_IMPORTER(DarkNetAdd) {
+
+    ASSERT(inputs.at(0).is_tensor(),  ErrorCode::kUNSUPPORTED_NODE); // input1
+    ASSERT(inputs.at(1).is_tensor(),  ErrorCode::kUNSUPPORTED_NODE); // input2
+    RETURN_FIRST_OUTPUT(
+            ctx->addPlugin(
+                    new ADDPlugin(),
+                    {&inputs.at(0).tensor(),&inputs.at(1).tensor()}));
 }
 
 } // namespace

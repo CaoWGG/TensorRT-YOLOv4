@@ -87,6 +87,7 @@ void get_kernel_params(::ONNX_NAMESPACE::NodeProto const& onnx_node,
       oh = (ih - 1) / sh + 1;
       ow = (iw - 1) / sw + 1;
     }
+    printf("%d %d\n",ow,oh);
     int ph = (oh - 1) * sh + kh - ih;
     int pw = (ow - 1) * sw + kw - iw;
     int ph_minor = ph >> 1; // Note: Rounds to -inf by design

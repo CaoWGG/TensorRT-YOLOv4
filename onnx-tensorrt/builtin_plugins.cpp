@@ -30,6 +30,7 @@
 #include "DCNv2.hpp"
 #include "yolo.h"
 #include "mish.h"
+#include "darknetadd.h"
 
 namespace onnx2trt {
 
@@ -80,6 +81,7 @@ REGISTER_BUILTIN_NVPLUGIN("Concat", ConcatPlugin);
 REGISTER_BUILTIN_PLUGIN("DCNv2", DCNv2Plugin);
 REGISTER_BUILTIN_PLUGIN("Mish", MishPlugin);
 REGISTER_BUILTIN_PLUGIN("YOLO", YOLOPlugin);
+REGISTER_BUILTIN_PLUGIN("DarkNetAdd", ADDPlugin);
 
 } // namespace
 

@@ -103,7 +103,7 @@ class DarkNetParser(object):
         elif isinstance(param_value_raw, str) and not param_value_raw.isalpha() and not ',' in param_value_raw:
             condition_param_value_positive = param_value_raw.isdigit()
             condition_param_value_negative = param_value_raw[0] == '-' and \
-                param_value_raw[1:].isdigit()
+                                             param_value_raw[1:].isdigit()
             if condition_param_value_positive or condition_param_value_negative:
                 param_value = int(param_value_raw)
             else:
@@ -476,7 +476,8 @@ class GraphBuilderONNX(object):
             outputs=[layer_name],
             kernel_shape=kernel_shape,
             strides=strides,
-            pads=[padding,padding,padding,padding],
+            pads=[padding,padding,padding+ (1 if (kernel_size-1)%2 else 0),padding+ (1 if (kernel_size-1)%2 else 0)],
+            #auto_pad='SAME_LOWER',
             dilations=dilations,
             name=layer_name
         )
@@ -543,21 +544,39 @@ class GraphBuilderONNX(object):
         """
         shortcut_index = layer_dict['from']
         activation = layer_dict['activation']
-        assert activation == 'linear'
-
+        if shortcut_index > 0:
+            shortcut_index+=1
         first_node_specs = self._get_previous_node_specs()
         second_node_specs = self._get_previous_node_specs(
             target_index=shortcut_index)
-        assert first_node_specs.channels == second_node_specs.channels
         channels = first_node_specs.channels
         inputs = [first_node_specs.name, second_node_specs.name]
-        shortcut_node = helper.make_node(
-            'Add',
-            inputs=inputs,
-            outputs=[layer_name],
-            name=layer_name,
-        )
+        if first_node_specs.channels != second_node_specs.channels :
+            shortcut_node = helper.make_node(
+                'DarkNetAdd',
+                inputs=inputs,
+                outputs=[layer_name],
+                name=layer_name,
+            )
+        else:
+            shortcut_node = helper.make_node(
+                'Add',
+                inputs=inputs,
+                outputs=[layer_name],
+                name=layer_name,
+            )
         self._nodes.append(shortcut_node)
+        inputs = [layer_name]
+        if activation == 'leaky':
+            layer_name = layer_name + '_lrelu'
+            lrelu_node = helper.make_node(
+                'LeakyRelu',
+                inputs=inputs,
+                outputs=[layer_name],
+                name=layer_name,
+                alpha=self.alpha_lrelu
+            )
+            self._nodes.append(lrelu_node)
         return layer_name, channels
 
     def _make_route_node(self, layer_name, layer_dict):
@@ -575,7 +594,7 @@ class GraphBuilderONNX(object):
             if index > 0 :
                 index +=1
             route_node_specs = self._get_previous_node_specs(
-                    target_index=index)
+                target_index=index)
             layer_name = route_node_specs.name
             channels = route_node_specs.channels
         else:
@@ -656,20 +675,16 @@ class GraphBuilderONNX(object):
         inputs = [previous_node_specs.name]
         channels = previous_node_specs.channels
         assert channels > 0
-        if (size- 1) % 2 == 0:
-            padding1 = (size - 1) // 2
-            padding2 = padding1
-        else:
-            padding1 = (size - 1) // 2
-            padding2 = padding1 + 1
+        padding = (size - 1)//2
         max_pool_node = onnx.helper.make_node(
-                            'MaxPool',
-                            inputs=inputs,
-                            outputs=[layer_name],
-                            kernel_shape=[size, size],
-                            strides=[stride, stride],
-                            pads=[padding1,padding2,padding1,padding2],
-                            name=layer_name)
+            'MaxPool',
+            inputs=inputs,
+            outputs=[layer_name],
+            kernel_shape=[size, size],
+            strides=[stride, stride],
+            pads=[padding,padding,padding + (1 if (size-1)%2 else 0),padding + (1 if (size-1)%2 else 0)],
+            #auto_pad = 'SAME_LOWER',
+            name=layer_name)
         self._nodes.append(max_pool_node)
         return layer_name, channels
 
@@ -694,16 +709,16 @@ class GraphBuilderONNX(object):
         channels = previous_node_specs.channels
         assert channels > 0
         yolo_node = onnx.helper.make_node(
-                            'YOLO',
-                            inputs=inputs,
-                            outputs=[layer_name],
-                            name=layer_name,
-                            **param)
+            'YOLO',
+            inputs=inputs,
+            outputs=[layer_name],
+            name=layer_name,
+            **param)
         dim = self.input_tensor.type.tensor_type.shape.dim
         batch,height,width =dim[0].dim_value, dim[2].dim_value//down_stride,dim[3].dim_value//down_stride
         output_dims = [batch*height*width*anhor_num + 1,6]
         output_tensor = helper.make_tensor_value_info(
-             layer_name, TensorProto.FLOAT, output_dims)
+            layer_name, TensorProto.FLOAT, output_dims)
         self.ouput_tensors.append(output_tensor)
         self._nodes.append(yolo_node)
         return layer_name, channels
@@ -712,9 +727,9 @@ class GraphBuilderONNX(object):
 
 def main():
     argparse = ArgumentParser()
-    argparse.add_argument("--cfg",default="model/yolov4.cfg")
-    argparse.add_argument("--weights",default="model/yolov4.weights")
-    argparse.add_argument("--out",default="model/yolov4.onnx")
+    argparse.add_argument("--cfg",default="model/yolov3-tiny-prn.cfg")
+    argparse.add_argument("--weights",default="model/yolov3-tiny-prn.weights")
+    argparse.add_argument("--out",default="model/yolov3-tiny-prn.onnx")
     arg = argparse.parse_args()
     parser = DarkNetParser()
     layer_configs = parser.parse_cfg_file(arg.cfg)

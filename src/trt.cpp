@@ -67,6 +67,7 @@ namespace yolodet{
         return deviceMem;
     }
     yoloNet::yoloNet(const std::string &onnxFile, const std::string &calibFile, int maxBatchSzie,yolodet::RUN_MODE mode) {
+        cudaSetDevice(0);
         auto builder = nvUniquePtr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(gLogger));
         assert(builder!= nullptr);
 
@@ -125,6 +126,7 @@ namespace yolodet{
     }
     yoloNet::yoloNet(const std::string &engineFile)
     {
+        cudaSetDevice(0);
         using namespace std;
         fstream file;
 
@@ -200,7 +202,7 @@ namespace yolodet{
         return 1;
     }
     bool yoloNet::infer(const cv::Mat &img, void *outputData) {
-        bool keepRation = true ,keepCenter= true;
+        bool keepRation = 1 ,keepCenter= 1;
         CUDA_CHECK(cudaMemcpy(mCudaImg,img.data,img.step[0]*img.rows,cudaMemcpyHostToDevice));
         resizeAndNorm(mCudaImg,(float*)mCudaBuffers[0],img.cols,img.rows,inputDim.d[2],inputDim.d[1],keepRation,keepCenter,0);
         CUDA_CHECK(cudaMemset(mCudaBuffers[1],0, sizeof(int)));
